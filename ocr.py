@@ -38,8 +38,6 @@ def parallelProcess(argumentList, workers):
             pool.close()
             pool.join()
 
-        # mapped_values = list(tqdm(pool.starmap(processSingleImage,argumentList,chunks), total=len(argumentList)))
-
     # Only return non NULL values
     return [image for image in mappedValues if image]
 
@@ -47,7 +45,6 @@ def parallelProcess(argumentList, workers):
 if __name__ == "__main__":
     reader = easyocr.Reader(["es"])
     baseDir = Path("/home/andres/workshop/fb/gallery-dl/facebook/Ruta de las Iglesias")
-    # baseDir = Path("/home/andres/workshop/fb/gallery-dl/facebook/Ruta de las Iglesias/Photos from Ruta de las Iglesias's post (pcb.122153817464350993)")
     workers = 2
     desiredText = '382'
 
