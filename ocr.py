@@ -2,10 +2,10 @@ import easyocr
 from pathlib import Path
 from torch.multiprocessing import Pool, set_start_method
 from tqdm import tqdm
-
+import argparse
 
 def processSingleImage(image, reader, desiredText):
-    result = reader.readtext(image, detail=0)
+    result = reader.readtext(image,detail=0,batch_size=1000)
     if desiredText in result:
         return image
     else:
@@ -43,16 +43,22 @@ def parallelProcess(argumentList, workers):
 
 
 if __name__ == "__main__":
-    reader = easyocr.Reader(["es"])
-    baseDir = Path("/home/andres/workshop/fb/gallery-dl/facebook/Ruta de las Iglesias")
-    workers = 2
-    desiredText = '382'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root-dir', required=True)
+    parser.add_argument('--workers', required=True, type=int)
+    parser.add_argument('--desired-text', required=True)
+    args = parser.parse_args()
+    
+    baseDir = Path(args.root_dir)
+    workers = args.workers
+    desiredText = args.desired_text
 
     fileNames = []
     for file in baseDir.rglob("*.jpg"):
         if file.is_file():
             fileNames.append(str(file))
 
+    reader = easyocr.Reader(["es"])
     argumentList = [(image, reader, desiredText) for image in fileNames]
 
     result = parallelProcess(argumentList, workers)
