@@ -20,14 +20,14 @@ def update_progress_bar(pbar, single_result, agregatedList):
 
 def parallelProcess(argumentList, workers):
     try:
-        set_start_method("spawn")
+        set_start_method('spawn')
     except RuntimeError as e:
         print(e)
         raise
 
     mappedValues = []
     with Pool(processes=workers) as pool:
-        with tqdm(total=len(argumentList), desc="Processed files") as pbar:
+        with tqdm(total=len(argumentList), desc='Processed files') as pbar:
             for args in argumentList:
                 pool.apply_async(
                     processSingleImage,
@@ -43,11 +43,11 @@ def parallelProcess(argumentList, workers):
     return [image for image in mappedValues if image]
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root-dir", required=True)
-    parser.add_argument("--workers", required=True, type=int)
-    parser.add_argument("--desired-text", required=True)
+    parser.add_argument('--root-dir', required=True)
+    parser.add_argument('--workers', required=True, type=int)
+    parser.add_argument('--desired-text', required=True)
     args = parser.parse_args()
 
     baseDir = Path(args.root_dir)
@@ -55,15 +55,14 @@ if __name__ == "__main__":
     desiredText = args.desired_text
 
     fileNames = []
-    for file in baseDir.rglob("*.jpg"):
+    for file in baseDir.rglob('*.jpg'):
         if file.is_file():
             fileNames.append(str(file))
 
-    reader = easyocr.Reader(["es"])
+    reader = easyocr.Reader(['es'])
     argumentList = [(image, reader, desiredText) for image in fileNames]
 
     result = parallelProcess(argumentList, workers)
 
-    with open("results.csv", "w") as f:
-        f.write("\n".join(result))
-
+    with open('results.csv', 'w') as f:
+        f.write('\n'.join(result))
