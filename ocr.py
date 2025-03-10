@@ -4,8 +4,9 @@ from torch.multiprocessing import Pool, set_start_method
 from tqdm import tqdm
 import argparse
 
+
 def processSingleImage(image, reader, desiredText):
-    result = reader.readtext(image,detail=0,batch_size=1000)
+    result = reader.readtext(image, detail=0, batch_size=1000)
     if desiredText in result:
         return image
     else:
@@ -44,11 +45,11 @@ def parallelProcess(argumentList, workers):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root-dir', required=True)
-    parser.add_argument('--workers', required=True, type=int)
-    parser.add_argument('--desired-text', required=True)
+    parser.add_argument("--root-dir", required=True)
+    parser.add_argument("--workers", required=True, type=int)
+    parser.add_argument("--desired-text", required=True)
     args = parser.parse_args()
-    
+
     baseDir = Path(args.root_dir)
     workers = args.workers
     desiredText = args.desired_text
@@ -65,3 +66,4 @@ if __name__ == "__main__":
 
     with open("results.csv", "w") as f:
         f.write("\n".join(result))
+
