@@ -3,14 +3,22 @@ from pathlib import Path
 from torch.multiprocessing import Pool, set_start_method
 from tqdm import tqdm
 import argparse
+import csv
 
 
-def processSingleImage(image, reader, desiredText):
+# One reader per worker process, created by initWorker
+reader = None
+
+
+def initWorker():
+    global reader
+    reader = easyocr.Reader(['es'])
+
+
+def processSingleImage(image, desiredTexts):
     result = reader.readtext(image, detail=0, batch_size=1000)
-    if desiredText in result:
-        return image
-    else:
-        return None
+    # One (bib, image) pair per bib found in the image
+    return [(text, image) for text in desiredTexts if text in result]
 
 
 def update_progress_bar(pbar, single_result, agregatedList):
@@ -26,7 +34,7 @@ def parallelProcess(argumentList, workers):
         raise
 
     mappedValues = []
-    with Pool(processes=workers) as pool:
+    with Pool(processes=workers, initializer=initWorker) as pool:
         with tqdm(total=len(argumentList), desc='Processed files') as pbar:
             for args in argumentList:
                 pool.apply_async(
@@ -39,30 +47,31 @@ def parallelProcess(argumentList, workers):
             pool.close()
             pool.join()
 
-    # Only return non NULL values
-    return [image for image in mappedValues if image]
+    # Flatten the per-image match lists
+    return [match for matches in mappedValues for match in matches]
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', required=True)
     parser.add_argument('--workers', required=True, type=int)
-    parser.add_argument('--desired-text', required=True)
+    parser.add_argument('--desired-text', required=True, nargs='+')
     args = parser.parse_args()
 
     baseDir = Path(args.root_dir)
     workers = args.workers
-    desiredText = args.desired_text
+    desiredTexts = args.desired_text
 
     fileNames = []
     for file in baseDir.rglob('*.jpg'):
         if file.is_file():
             fileNames.append(str(file))
 
-    reader = easyocr.Reader(['es'])
-    argumentList = [(image, reader, desiredText) for image in fileNames]
+    argumentList = [(image, desiredTexts) for image in fileNames]
 
     result = parallelProcess(argumentList, workers)
 
-    with open('results.csv', 'w') as f:
-        f.write('\n'.join(result))
+    with open('results.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['bib', 'image'])
+        writer.writerows(sorted(result))
